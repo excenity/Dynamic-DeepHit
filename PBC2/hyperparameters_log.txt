@@ -5,12 +5,12 @@ keep_prob:0.6
 lr_train:0.0001
 h_dim_RNN:100
 h_dim_FC:100
-num_layers_RNN:2
+num_layers_RNN:3
 num_layers_ATT:2
-num_layers_CS:2
+num_layers_CS:3
 RNN_type:LSTM
-FC_active_fn:<function relu at 0x7fce04b41320>
-RNN_active_fn:<function tanh at 0x7fce046b7560>
+FC_active_fn:<function relu at 0x0000020EEE0439D8>
+RNN_active_fn:<function tanh at 0x0000020EEDB80558>
 reg_W:1e-05
 reg_W_out:0.0
 alpha:1.0
