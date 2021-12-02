@@ -163,21 +163,15 @@ def convert_df(input_df):
                  'htnmed': 'treated'})
 
   # change race and gender categories
-  input_df.loc[input_df['race'] == 0, 'race'] = 'white'
   input_df.loc[input_df['race'] == 1, 'race'] = 'white'
-  input_df.loc[input_df['race'] == 2, 'race'] = 'white'
-  input_df.loc[input_df['race'] == 3, 'race'] = 'black'
+  input_df.loc[input_df['race'] == 3, 'race'] = 'white'
   input_df.loc[input_df['race'] == 4, 'race'] = 'white'
+  input_df.loc[input_df['race'] == 2, 'race'] = 'black'
+  input_df.loc[input_df['race'] == 5, 'race'] = 'white'
+  input_df.loc[input_df['race'] == 6, 'race'] = 'white'
 
-  input_df.loc[input_df['gender'] == 0, 'gender'] = 'F'
+  input_df.loc[input_df['gender'] == 2, 'gender'] = 'F'
   input_df.loc[input_df['gender'] == 1, 'gender'] = 'M'
-
-  input_df.loc[input_df['diabetes'] == 0, 'diabetes'] = 0
-  input_df.loc[input_df['diabetes'] == 1, 'diabetes'] = 0
-  input_df.loc[input_df['diabetes'] == 2, 'diabetes'] = 1
-  input_df.loc[input_df['diabetes'] == 3, 'diabetes'] = 1
-
-  input_df.loc[input_df['smoker'] == 2, 'smoker'] = 1
 
   input_df['age'] = input_df['age'].astype(int)
   input_df['sbp'] = input_df['sbp'].astype(int)
@@ -188,20 +182,29 @@ def convert_df(input_df):
   return input_df
 
 def pce_prediction(input_df, pred_time):
+    
+  # get max before threshold 
 
-  input_df = input_df.loc[input_df['actual_time'] == pred_time]
-
+  max_age_before_threshold = input_df.loc[input_df['times'] <= pred_time, :].groupby('id').times.max().reset_index()
+  
+  input_df = pd.merge(input_df, max_age_before_threshold)
+    
   # calculation 
   prediction_df = ascvd_calc(input_df)
 
   return prediction_df
 
 def pce_pred_df_tab(input_df, pred_time, pred_time_index):
+  
 
-  input_df = input_df[:, pred_time_index]
+    
+  # get max before threshold 
+  max_age_before_threshold = input_df.loc[input_df['times'] <= pred_time, :].groupby('id').times.max().reset_index()
+  
+  input_df = pd.merge(input_df, max_age_before_threshold)
+
   input_df = pd.DataFrame(input_df)
-  input_df.columns = ['x', 'sbp', 'dbp', 'hdl', 'chol', 'age', 'cig',
-                      'dm03', 'htnmed', 'race', 'gender']
+  #input_df ['x', 'sbp', 'dbp', 'hdl', 'chol', 'age', 'cig', 'dm03', 'htnmed', 'race', 'gender']
 
   input_df = convert_df(input_df)                    
 
