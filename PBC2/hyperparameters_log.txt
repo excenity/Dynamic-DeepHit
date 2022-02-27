@@ -1,18 +1,18 @@
 mb_size:128
 iteration_burn_in:3000
 iteration:25000
-keep_prob:0.6
+keep_prob:0.8
 lr_train:0.0001
-h_dim_RNN:100
-h_dim_FC:100
-num_layers_RNN:2
+h_dim_RNN:50
+h_dim_FC:50
+num_layers_RNN:5
 num_layers_ATT:2
-num_layers_CS:2
+num_layers_CS:3
 RNN_type:LSTM
-FC_active_fn:<function relu at 0x7fce04b41320>
-RNN_active_fn:<function tanh at 0x7fce046b7560>
+FC_active_fn:<function relu at 0x0000024C2D611A68>
+RNN_active_fn:<function tanh at 0x0000024C2D1515E8>
 reg_W:1e-05
 reg_W_out:0.0
 alpha:1.0
 beta:0.1
-gamma:1.0
+gamma:3.0
