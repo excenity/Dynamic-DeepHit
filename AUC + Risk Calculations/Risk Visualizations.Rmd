@@ -1,0 +1,48 @@
+---
+title: "Visualziation"
+author: "Jingzhi Kevin Yu"
+date: "1/20/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+if (!require(tidyverse)) install.packages('tidyverse')
+
+library(ggplot2)
+library(tidyverse)
+library("viridis") 
+
+df = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit copy/risk_df_order.csv')
+
+df$risk_cat_pce = factor(df$risk_cat_pce, levels = c('Low Risk', 'Borderline Risk', 'Intermediate Risk', 'High Risk'))
+```
+
+```{r, fig.width = 8, fig.height= 6}
+ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh, color = risk_cat_pce)) + geom_point(alpha = .75) + theme_bw() + geom_abline(color = 'green', linewidth = 1.55) + scale_color_viridis(discrete = T, option = 'C', direction = -1)
+```
+
+```{r, fig.width = 8, fig.height= 6}
+df$true_label = as.factor(df$true_label)
+df %>% group_by(risk_cat_pce) %>% summarise_at(vars(risk_order_pce), min)
+ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh, color = true_label)) + geom_point(alpha = .5) + theme_bw() + geom_abline(color = 'red', linewidth = 1.25) + scale_color_manual(values=c('gray', 'red')) +
+  geom_vline(xintercept = 1274, color = 'green', linetype = 'dashed') + geom_vline(xintercept = 1642, color = 'yellow', linetype = 'dashed') + geom_vline(xintercept = 2382, color = 'red', linetype = 'dashed')
+```
+
+NRI
+```{r}
+df$pce_pred = ifelse(df$risk >= 0.075, 1, 0)
+for (i in seq(0, 0.1, by 0.01))
+{
+  df$ddh_pred = ifelse(df$value >= i, 1, 0)
+}
+  
+```
+
+
+```{r, fig.width = 8, fig.height= 6}
+ggplot(df, aes(x = log(risk), y = value, color = true_label)) + geom_point(alpha = .5, fill = 'white') + theme_bw() + scale_color_manual(values=c('lightgray', 'red')) + xlab('pce_risk(logged)') + ylab('ddh_risk') +
+  geom_vline(xintercept = log(0.05), color = 'green', linetype = 'dashed') + geom_vline(xintercept = log(0.075), color = 'gold', linetype = 'dashed') + geom_vline(xintercept = log(0.2), color = 'red', linetype = 'dashed')
+```
+
+
+
