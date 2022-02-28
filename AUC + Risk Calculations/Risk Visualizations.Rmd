@@ -11,6 +11,8 @@ if (!require(tidyverse)) install.packages('tidyverse')
 library(ggplot2)
 library(tidyverse)
 library("viridis") 
+library(nricens)
+library(caret)
 
 df = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/risk_df_order.csv')
 
@@ -29,13 +31,53 @@ ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh, color = true_label)) + ge
 ```
 
 NRI
-```{r}
-df$pce_pred = ifelse(df$risk >= 0.075, 1, 0)
-for (i in seq(0, 0.1, by 0.01))
+```{r, fig.width = 6, fig.height = 4}
+NRI_calc = function(pce_threshold)
 {
-  df$ddh_pred = ifelse(df$value >= i, 1, 0)
-}
+  df$pce_pred = ifelse(df$risk >= pce_threshold, 1, 0)
+  pce_low_risk_n = df %>% filter(pce_pred == 0) %>% count()
+  pce_low_risk_n = pce_low_risk_n$n
+  pce_high_risk_n = df %>% filter(pce_pred == 1) %>% count()
+  pce_high_risk_n = pce_high_risk_n$n
   
+  NRI_list = c()
+  thresholds = seq(from = 0, to = 0.125, by = 0.005)
+  
+  for (i in thresholds)
+  {
+    #label correct predictions
+    df$ddh_pred = ifelse(df$value >= i, 1, 0)
+    df$matched = 0
+    df$matched[df$true_label == df$ddh_pred] = 1
+    
+    #NRIevents (high risk)
+    ddh_correct_event = df %>% filter(true_label == 1 & matched == 1 & pce_pred != ddh_pred) %>% count()
+    ddh_incorrect_event = df %>% filter(true_label == 1 & matched == 0 & pce_pred != ddh_pred) %>% count()
+    NRI_e = (ddh_correct_event - ddh_incorrect_event) / pce_high_risk_n
+    
+    #NRIevents (high risk)
+    ddh_correct_nonevent = df %>% filter(true_label == 0 & matched == 1 & pce_pred != ddh_pred) %>% count()
+    ddh_incorrect_nonevent = df %>% filter(true_label == 0 & matched == 0 & pce_pred != ddh_pred) %>% count()
+    NRI_ne = (ddh_correct_nonevent - ddh_incorrect_nonevent) / pce_low_risk_n
+    
+    NRI = NRI_e + NRI_ne
+    
+    NRI_list = c(NRI_list, NRI)
+  }
+  
+  NRI_list = as.data.frame(NRI_list)
+  NRI_list = as.data.frame(t(NRI_list))
+  NRI_list$threshold = thresholds
+  
+  names(NRI_list) = c('NRI', 'Threshold')
+  print(ggplot(NRI_list, aes(x = Threshold, y = NRI)) + geom_line() + geom_hline(yintercept = 0, color = 'red') + theme_bw() + ggtitle(paste0('NRI ', '(PCE Threshold = ', pce_threshold,')')))
+  
+  return(NRI_list)
+}
+
+NRI_list_0075 = NRI_calc(0.075)
+NRI_list_01 = NRI_calc(0.1)
+NRI_list_01 = NRI_calc(0.2)
 ```
 
 
