@@ -12,7 +12,7 @@ library(ggplot2)
 library(tidyverse)
 library("viridis") 
 
-df = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit copy/risk_df_order.csv')
+df = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/risk_df_order.csv')
 
 df$risk_cat_pce = factor(df$risk_cat_pce, levels = c('Low Risk', 'Borderline Risk', 'Intermediate Risk', 'High Risk'))
 ```
