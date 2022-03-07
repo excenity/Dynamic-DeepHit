@@ -26,7 +26,7 @@ ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh, color = risk_cat_pce)) + 
 ```{r, fig.width = 8, fig.height= 6}
 df$true_label = as.factor(df$true_label)
 df %>% group_by(risk_cat_pce) %>% summarise_at(vars(risk_order_pce), min)
-ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh, color = true_label)) + geom_point(alpha = .5) + theme_bw() + geom_abline(color = 'red', linewidth = 1.25) + scale_color_manual(values=c('gray', 'red')) +
+ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh)) + geom_point(alpha = .5, color = 'gray') + geom_point(aes(x = risk_order_pce, y = risk_order_ddh)) theme_bw() + geom_abline(color = 'red', linewidth = 1.25) + scale_color_manual(values=c('gray', 'red')) +
   geom_vline(xintercept = 1274, color = 'green', linetype = 'dashed') + geom_vline(xintercept = 1642, color = 'yellow', linetype = 'dashed') + geom_vline(xintercept = 2382, color = 'red', linetype = 'dashed')
 ```
 
