@@ -80,6 +80,12 @@ NRI_list_01 = NRI_calc(0.1)
 NRI_list_01 = NRI_calc(0.2)
 ```
 
+Brier Score
+```{r}
+brier_score = df 
+brier_score$bs_diff = brier_score$risk - brier_score$true_label
+sum(brier_score$bs_diff)^2/nrow(brier_score)
+```
 
 ```{r, fig.width = 8, fig.height= 6}
 ggplot(df, aes(x = log(risk), y = value, color = true_label)) + geom_point(alpha = .5, fill = 'white') + theme_bw() + scale_color_manual(values=c('lightgray', 'red')) + xlab('pce_risk(logged)') + ylab('ddh_risk') +
