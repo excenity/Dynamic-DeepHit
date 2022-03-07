@@ -9,8 +9,8 @@ num_layers_RNN:5
 num_layers_ATT:2
 num_layers_CS:3
 RNN_type:LSTM
-FC_active_fn:<function relu at 0x000001FE5AD42AF8>
-RNN_active_fn:<function tanh at 0x000001FE5A881678>
+FC_active_fn:<function relu at 0x0000016125D52A68>
+RNN_active_fn:<function tanh at 0x00000161258925E8>
 reg_W:1e-05
 reg_W_out:0.0
 alpha:1.0
