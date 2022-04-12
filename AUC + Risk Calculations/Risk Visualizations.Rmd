@@ -30,6 +30,29 @@ ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh)) + geom_point(alpha = .5,
   geom_vline(xintercept = 1274, color = 'green', linetype = 'dashed') + geom_vline(xintercept = 1642, color = 'yellow', linetype = 'dashed') + geom_vline(xintercept = 2382, color = 'red', linetype = 'dashed')
 ```
 
+Continuous NRI 
+Formula: [(up - down)/(up + down + unchanged) in Y = 1] - [(up - down)/(up + down + unchanged) in Y = 0]
+```{r}
+df$value = round(df$value, 3)
+
+# categorize
+df$reclassification = 0 #down
+df$reclassification[df$risk < df$value] = 1 #up
+df$reclassification[df$risk == df$value] = 2 #unchanged
+
+table(df$true_label, df$reclassification)
+
+down_1 = df %>% filter(reclassification ==0 & true_label == 1) %>% count()
+up_1 = df %>% filter(reclassification == 1 & true_label == 1) %>% count()
+unchanged_1 = df %>% filter(reclassification == 2 & true_label == 1) %>% count()
+
+down_0 = df %>% filter(reclassification ==0 & true_label == 0) %>% count()
+up_0 = df %>% filter(reclassification == 1 & true_label == 0) %>% count()
+unchanged_0 = df %>% filter(reclassification == 2 & true_label == 0) %>% count()
+
+((up_1 - down_1)/(up_1 + down_1 + unchanged_1)) - ((up_0 - down_0)/(down_0 + up_0 + unchanged_0))
+```
+
 NRI
 ```{r, fig.width = 6, fig.height = 4}
 NRI_calc = function(pce_threshold)
@@ -100,5 +123,10 @@ ggplot(df, aes(x = log(risk), y = value, color = true_label)) + geom_point(alpha
   geom_vline(xintercept = log(0.05), color = 'green', linetype = 'dashed') + geom_vline(xintercept = log(0.075), color = 'gold', linetype = 'dashed') + geom_vline(xintercept = log(0.2), color = 'red', linetype = 'dashed')
 ```
 
-
-
+```{r, fig.width=4, fig.height=4}
+# pce roc
+roc_score_pce = roc(df$true_label, df$risk)
+roc_score_ddh = roc(df$true_label, df$value)
+plot.roc(roc_score_pce, main ="PCE", colorize = T, print.auc = T,, col = 'chartreuse3')
+plot.roc(roc_score_ddh, main ="DDH", add = T, colorize = T, print.auc = T, col = 'coral2',  print.auc.y = 0.6 )
+````
