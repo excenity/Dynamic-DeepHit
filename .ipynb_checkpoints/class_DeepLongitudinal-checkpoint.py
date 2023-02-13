@@ -2,7 +2,7 @@ import numpy as np
 import tensorflow as tf
 import random
 
-from tensorflow.contrib.layers import fully_connected as FC_Net
+from tensorflow.contrib.layers.v1 import fully_connected as FC_Net
 from tensorflow.python.ops.rnn import _transpose_batch_time
 
 

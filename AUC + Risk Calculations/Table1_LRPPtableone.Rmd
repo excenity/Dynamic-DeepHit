@@ -1,0 +1,31 @@
+---
+title: "Table 1 LRPP"
+author: "Jingzhi Kevin Yu"
+date: "4/28/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(tidyverse)
+library(table1)
+```
+
+```{r}
+df = fread('/Volumes/fsmresfiles/PrevMed/Projects/MESA_RiskPred/LRPP data/LRPP_select.csv')
+
+df_min = df %>% group_by(id) %>% summarise_at(vars(times), min)
+df = inner_join(df, df_min)
+```
+
+```{r}
+df$gender = as.factor(df$gender)
+df$race = as.factor(df$race)
+df$cig = as.factor(df$cig)
+df$dm03 = as.factor(df$dm03)
+df$htnmed = as.factor(df$htnmed)
+table1(~ age + gender + race + sbp + dbp + chol + hdl +
+         cig + dm03 + htnmed | label, data = df)
+```

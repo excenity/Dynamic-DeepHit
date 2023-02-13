@@ -113,13 +113,14 @@ def f_construct_dataset(df, feat_list):
 
 def import_dataset(norm_mode = 'standard'):
 
-    df_                = pd.read_csv('R:/PrevMed/projects/MESA_RiskPred/LRPP data/LRPP_select.csv')
-    
-    # remove variable
-    #df_ = df_.drop(columns = [])
+    df_                = pd.read_csv('/content/drive/My Drive/Longitudinal Risk Prediction/Dynamic-DeepHit LRPP/LRPP_select.csv')
+
+
+    #remove variable
+    #df_ = df_.drop(columns = ['gender'])
 
     cont_list          = ['sbp', 'dbp', 'hdl', 'chol', 'age']
-    bin_list           = ['cig', 'dm03', 'htnmed', 'race', 'gender']
+    bin_list           = ['cig', 'htnmed', 'dm03', 'race']
     feat_list          = cont_list + bin_list
     df_                = df_[['id', 'tte', 'times', 'label']+feat_list]
     df_org_            = df_.copy(deep=True)

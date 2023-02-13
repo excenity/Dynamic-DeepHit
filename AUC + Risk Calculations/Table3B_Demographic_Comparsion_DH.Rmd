@@ -1,0 +1,83 @@
+---
+title: "6_DemoComparison_DH"
+author: "Jingzhi Kevin Yu"
+date: "5/16/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(pROC)
+library(tidyverse)
+library(data.table)
+
+df = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/DH_pred_df.csv')
+demo_df = fread('/Volumes/fsmresfiles/PrevMed/Projects/MESA_RiskPred/LRPP data/LRPP_select.csv')
+indecies_test = fread('/Volumes/fsmresfiles/PrevMed/Projects/MESA_RiskPred/LRPP data/random_index_select.csv')
+```
+
+check race gender balance
+```{r}
+training_index = indecies_test %>% filter(study_index == 'FALSE')
+training_df = demo_df %>% filter(id %in% training_index$id) %>% distinct(id, race, gender, age)
+
+testing_index = indecies_test %>% filter(study_index == 'TRUE')
+testing_df = demo_df %>% filter(id %in% testing_index$id) %>% distinct(id, race, gender, age)
+
+round(table(training_df$race, training_df$gender) / nrow(training_df),3)
+round(table(testing_df$race, testing_df$gender) / nrow(testing_df),3)
+```
+
+## R Markdown
+```{r}
+indecies_test = indecies_test %>% filter(study_index == 'TRUE')
+demo_df = demo_df %>% filter(id %in% indecies_test$id)
+demo_df = demo_df %>% distinct(id, race, gender, age)
+demo_df = demo_df[!row.names(demo_df) %in% c(2016, 2081, 2966)]
+
+risk = cbind(df, demo_df)
+```
+
+
+other men 
+```{r}
+risk_df = risk %>% filter(race == 1 & gender == 1) 
+auc(risk_df$true_labels, risk_df$pred_risk)
+ci(risk_df$true_labels, risk_df$pred_risk)
+```
+
+other women 
+```{r}
+risk_df = risk %>% filter(race == 1 & gender == 2) 
+auc(risk_df$true_labels, risk_df$pred_risk)
+ci(risk_df$true_labels, risk_df$pred_risk)
+```
+
+black men 
+```{r}
+risk_df = risk %>% filter(race == 2 & gender == 1) 
+auc(risk_df$true_labels, risk_df$pred_risk)
+ci(risk_df$true_labels, risk_df$pred_risk)
+```
+
+black women 
+```{r}
+risk_df = risk %>% filter(race == 2 & gender == 2) 
+auc(risk_df$true_labels, risk_df$pred_risk)
+ci(risk_df$true_labels, risk_df$pred_risk)
+```
+
+Age
+
+```{r}
+# < 60 
+risk_df = risk %>% filter(age < 60)
+auc(risk_df$true_labels, risk_df$pred_risk)
+ci(risk_df$true_labels, risk_df$pred_risk)
+```
+
+```{r}
+# >= 60 
+risk_df = risk %>% filter(age >= 60)
+auc(risk_df$true_labels, risk_df$pred_risk)
+ci(risk_df$true_labels, risk_df$pred_risk)
+```

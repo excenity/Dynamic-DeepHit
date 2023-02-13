@@ -1,0 +1,133 @@
+---
+title: "Demographic Comparison"
+author: "Jingzhi Kevin Yu"
+date: "5/19/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(tidyverse)
+library(data.table)
+library(pROC)
+```
+
+```{r}
+# get data
+df = fread('/Volumes/fsmresfiles/PrevMed/Projects/MESA_RiskPred/LRPP data/LRPP_select.csv')
+indecies_test = fread('/Volumes/fsmresfiles/PrevMed/Projects/MESA_RiskPred/LRPP data/random_index_select.csv')
+names(indecies_test) = c('index', 'label', 'study_index')
+
+# ddh
+risk = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/DDH_pred_df.csv')
+
+# get demographic variables
+indecies_test = indecies_test %>% filter(study_index == 'TRUE') %>% distinct(index)
+df = df %>% filter(id %in% indecies_test$index)
+df_age = df %>% filter(times <=8) %>% group_by(id) %>% summarise_at(vars(age), max)
+df = df %>% group_by(id) %>% distinct(id, race, gender)
+
+# combine
+risk = cbind(risk, df_age %>% select(-id))
+risk = cbind(risk, df %>% select(-id))
+```
+
+# DDH 
+
+other men 
+```{r}
+risk_df = risk %>% filter(race == 1 & gender == 1) 
+auc(risk_df$true_labels, risk_df$ddh_risk)
+ci(risk_df$true_labels, risk_df$ddh_risk)
+```
+
+other women 
+```{r}
+risk_df = risk %>% filter(race == 1 & gender == 2) 
+auc(risk_df$true_labels, risk_df$ddh_risk)
+ci(risk_df$true_labels, risk_df$ddh_risk)
+```
+
+black men 
+```{r}
+risk_df = risk %>% filter(race == 2 & gender == 1) 
+auc(risk_df$true_labels, risk_df$ddh_risk)
+ci(risk_df$true_labels, risk_df$ddh_risk)
+```
+
+black women 
+```{r}
+risk_df = risk %>% filter(race == 2 & gender == 2) 
+auc(risk_df$true_labels, risk_df$ddh_risk)
+ci(risk_df$true_labels, risk_df$ddh_risk)
+```
+
+Age
+
+```{r}
+# < 60 
+risk_df = risk %>% filter(age < 60)
+auc(risk_df$true_labels, risk_df$ddh_risk)
+ci(risk_df$true_labels, risk_df$ddh_risk)
+```
+
+```{r}
+# >= 60 
+risk_df = risk %>% filter(age >= 60)
+auc(risk_df$true_labels, risk_df$ddh_risk)
+ci(risk_df$true_labels, risk_df$ddh_risk)
+```
+
+# PCE 
+
+```{r}
+risk = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/pce_pred_df.csv')
+risk = risk %>% select(risk, true_label)
+
+# combine
+risk = cbind(risk, df_age %>% select(-id))
+risk = cbind(risk, df %>% select(-id))
+```
+
+other men 
+```{r}
+risk_df = risk %>% filter(race == 1 & gender == 1) 
+auc(risk_df$true_label, risk_df$risk)
+ci(risk_df$true_label, risk_df$risk)
+```
+
+other women 
+```{r}
+risk_df = risk %>% filter(race == 1 & gender == 2) 
+auc(risk_df$true_label, risk_df$risk)
+ci(risk_df$true_label, risk_df$risk)
+```
+
+black men 
+```{r}
+risk_df = risk %>% filter(race == 2 & gender == 1) 
+auc(risk_df$true_label, risk_df$risk)
+ci(risk_df$true_label, risk_df$risk)
+```
+
+black women 
+```{r}
+risk_df = risk %>% filter(race == 2 & gender == 2) 
+auc(risk_df$true_label, risk_df$risk)
+ci(risk_df$true_label, risk_df$risk)
+```
+
+Age
+
+```{r}
+# < 60 
+risk_df = risk %>% filter(age < 60)
+auc(risk_df$true_label, risk_df$risk)
+ci(risk_df$true_label, risk_df$risk)
+```
+
+```{r}
+# >= 60 
+risk_df = risk %>% filter(age >= 60)
+auc(risk_df$true_label, risk_df$risk)
+ci(risk_df$true_label, risk_df$risk)
+```

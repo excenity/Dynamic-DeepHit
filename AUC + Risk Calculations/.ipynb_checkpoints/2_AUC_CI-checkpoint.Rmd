@@ -1,0 +1,92 @@
+---
+title: "AUC_CIs"
+author: "Jingzhi Kevin Yu"
+date: "4/14/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(data.table)
+library(pROC)
+ 
+knitr::opts_chunk$set(root.dir = '/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/Output/Demographic Comparison AUCs/')
+```
+
+input data 
+```{r}
+# race 
+black_df = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/Output/Demographic Comparison AUCs/risk_demo_black.csv')
+other_df = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/Output/Demographic Comparison AUCs/risk_demo_white.csv')
+# gender
+female_df = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/Output/Demographic Comparison AUCs/risk_demo_females.csv')
+male_df = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/Output/Demographic Comparison AUCs/risk_demo_males.csv')
+# age
+less60 = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/Output/Demographic Comparison AUCs/risk_demo_lessthan60.csv')
+more60 = fread('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/Output/Demographic Comparison AUCs/risk_demo_morethan60.csv')
+```
+
+Race - black
+```{r}
+# pce
+auc(black_df$true_label, black_df$risk)
+ci.auc(black_df$true_label, black_df$risk)
+
+# ddh
+auc(black_df$true_label, black_df$value)
+ci.auc(black_df$true_label, black_df$value)
+```
+
+Race - other
+```{r}
+# pce
+auc(other_df$true_label, other_df$risk)
+ci.auc(other_df$true_label, other_df$risk)
+
+# ddh
+auc(other_df$true_label, other_df$value)
+ci.auc(other_df$true_label, other_df$value)
+```
+
+Gender - Female
+```{r}
+# pce
+auc(female_df$true_label, female_df$risk)
+ci.auc(female_df$true_label, female_df$risk)
+
+# ddh
+auc(female_df$true_label, female_df$value)
+ci.auc(female_df$true_label, female_df$value)
+```
+
+Gender - Male
+```{r}
+# pce
+auc(male_df$true_label, male_df$risk)
+ci.auc(male_df$true_label, male_df$risk)
+
+# ddh
+auc(male_df$true_label, male_df$value)
+ci.auc(male_df$true_label, male_df$value)
+```
+
+Age - Less than 60
+```{r}
+# pce
+auc(less60$true_label, less60$risk)
+ci.auc(less60$true_label, less60$risk)
+
+# ddh
+auc(less60$true_label, less60$value)
+ci.auc(less60$true_label, less60$value)
+```
+
+Age - More than 60
+```{r}
+# pce
+auc(more60$true_label, more60$risk)
+ci.auc(more60$true_label, more60$risk)
+
+# ddh
+auc(more60$true_label, more60$value)
+ci.auc(more60$true_label, more60$value)
+```

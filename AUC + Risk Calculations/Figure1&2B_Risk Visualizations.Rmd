@@ -1,0 +1,171 @@
+---
+title: "Visualziation"
+author: "Jingzhi Kevin Yu"
+date: "1/20/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+if (!require(tidyverse)) install.packages('tidyverse')
+
+library(ggplot2)
+library(tidyverse)
+library("viridis") 
+library(nricens)
+library(caret)
+library(pROC)
+
+df = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/risk_df_order.csv')
+
+pce_training = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/pce_pred_training_df.csv')
+dh = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/DH_pred_df.csv')
+dh_training = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/DH_pred_training_df.csv')
+ddh = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/DDH_pred_df_current.csv')
+
+df$risk_cat_pce = factor(df$risk_cat_pce, levels = c('Low Risk', 'Borderline Risk', 'Intermediate Risk', 'High Risk'))
+```
+
+```{r, fig.width = 6, fig.height= 5}
+ggplot(df, aes(x = risk, y = value, color = risk_cat_pce)) + geom_point(alpha = .5) + theme_bw() + geom_abline(color = 'green', linewidth = 1.55) + scale_color_viridis(discrete = T, option = 'B', direction = -1, end = 0.8) + xlim(0, 0.75) + ylim(0, 0.75) + xlab('PCE Risk') + ylab('DDH Risk') + labs(color = 'Risk Category') + coord_fixed() + geom_hline(yintercept = 0.2, alpha = .9, linetype = 'dashed', color = 'gray25') + geom_hline(yintercept = 0.075, alpha = .9, linetype = 'dashed', color = 'purple4') + geom_hline(yintercept = 0.05, alpha = .9, linetype = 'dashed', color = 'indianred1')
+```
+
+```{r, fig.width = 6, fig.height= 5}
+df$ASCVD_Event = as.factor(df$true_label)
+ggplot(df %>% arrange(true_label), aes(x = risk, y = value, color = ASCVD_Event)) + geom_point(alpha = .25) + theme_bw() + geom_abline(color = 'green', linewidth = 1.55) + scale_discrete_manual(values=c('gray', 'red'), aesthetics = 'colour')  + xlim(0, 0.8) + ylim(0, 0.8) + xlab('PCE Risk') + ylab('DDH Risk') + labs(color = 'ASCVD Event') + coord_fixed() + geom_hline(yintercept = 0.2, alpha = .9, linetype = 'dashed', color = 'gray25') + geom_hline(yintercept = 0.075, alpha = .9, linetype = 'dashed', color = 'purple4') + geom_hline(yintercept = 0.05, alpha = .9, linetype = 'dashed', color = 'indianred1')
+```
+
+```{r, fig.width = 8, fig.height= 6}
+df$true_label = as.factor(df$true_label)
+df %>% group_by(risk_cat_pce) %>% summarise_at(vars(risk_order_pce), min)
+ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh, color = true_label)) + geom_point(alpha = .5) + theme_bw() + geom_abline(color = 'red') + scale_discrete_manual(values=c('gray', 'red'), aesthetics = 'colour') + geom_vline(xintercept = 1274, color = 'green', linetype = 'dashed') + geom_vline(xintercept = 1642, color = 'yellow', linetype = 'dashed') + geom_vline(xintercept = 2382, color = 'red', linetype = 'dashed') + xlab('PCE Risk Rank') + ylab('DDH Risk Rank')
+
+#ggplot(df, aes(x = risk, y = value, color = true_label)) + geom_point(alpha = .5) + theme_bw() + geom_abline(color = 'red') + scale_discrete_manual(values=c('gray', 'red')) + xlab('PCE Risk Rank') + ylab('DDH Risk Rank')
+```
+
+AUC CIs
+```{r}
+df_auc = df %>% filter(risk_cat_pce %in% c('Intermediate Risk', 'Borderline Risk'))
+
+# PCE
+print('PCE')
+auc(df_auc$true_label, df_auc$risk)
+ci.auc(df_auc$true_label, df_auc$risk)
+
+# DDH
+print('DDH')
+auc(df_auc$true_label, df_auc$value)
+ci.auc(df_auc$true_label, df_auc$value)
+
+# PCE Training
+print('PCE Training')
+auc(pce_training$true_label, pce_training$risk)
+ci.auc(pce_training$true_label, pce_training$risk)
+
+# DDH Training
+print('DDH Training')
+auc(ddh$ddh_risk, ddh$true_labels)
+ci.auc(ddh$ddh_risk, ddh$true_labels)
+
+# DH
+print('DH')
+auc(dh$true_labels, dh$pred_risk)
+ci.auc(dh$true_labels, dh$pred_risk)
+
+# DH
+print('DH Training')
+auc(dh_training$true_labels, dh_training$pred_risk)
+ci.auc(dh_training$true_labels, dh_training$pred_risk)
+```
+
+Continuous NRI 
+Formula: [(up - down)/(up + down + unchanged) in Y = 1] + [(down - up)/(up + down + unchanged) in Y = 0]
+```{r}
+df_nri = df  %>% filter(risk_cat_pce %in% c('Intermediate Risk', 'Borderline Risk'))
+
+df_nri$value = round(df_nri$value, 4)
+
+# categorize
+df_nri$reclassification = 0 #down
+df_nri$reclassification[df_nri$risk < df_nri$value] = 1 #up
+df_nri$reclassification[df_nri$risk == df_nri$value] = 2 #unchanged
+
+down_1 = df_nri %>% filter(reclassification ==0 & true_label == 1) %>% count()
+up_1 = df_nri %>% filter(reclassification == 1 & true_label == 1) %>% count()
+unchanged_1 = df_nri %>% filter(reclassification == 2 & true_label == 1) %>% count()
+
+down_0 = df_nri %>% filter(reclassification ==0 & true_label == 0) %>% count()
+up_0 = df_nri %>% filter(reclassification == 1 & true_label == 0) %>% count()
+unchanged_0 = df_nri %>% filter(reclassification == 2 & true_label == 0) %>% count()
+
+((up_1 - down_1)/(up_1 + down_1 + unchanged_1)) + ((down_0 - up_0)/(down_0 + up_0 + unchanged_0))
+
+df_nri$true_label = factor(df_nri$true_label, labels = c('Non-ASCVD', 'ASCVD'))
+df_nri$reclassification = factor(df_nri$reclassification, labels = c('Down', 'Up', 'Unchanged'))
+table(df_nri$true_label, df_nri$reclassification)
+```
+
+Risk Visualization
+```{r, fig.height = 4, fig.width = 4}
+# ddh
+df$risk_deciles_ddh = ntile(df$risk_order_ddh, 10)
+df$true_label = as.numeric(as.character(df$true_label))
+decile_comp = df %>% group_by(risk_deciles_ddh) %>% summarise_at(vars(value, true_label), list(mean, sd)) %>% select(-true_label_fn2)
+names(decile_comp) = c('risk_deciles_ddh', 'mean_risk', 'obs_risk', 'sd_risk')
+decile_comp$margin = qt(0.975, df = 311 - 1) * decile_comp$sd_risk / sqrt(311)
+decile_comp$upper = decile_comp$mean_risk + decile_comp$margin
+decile_comp$lower = decile_comp$mean_risk - decile_comp$margin
+
+ggplot(decile_comp, aes(x = mean_risk, y = obs_risk)) + geom_point() + geom_errorbar(xmin = decile_comp$lower, xmax = decile_comp$upper) + coord_fixed() + geom_abline(color = 'red') + xlab('Predicted Risk') + ylab('Observed Risk') + ggtitle('Dynamic DeepHit - Risk Comparison') + theme_bw() + xlim(0, 0.3) + ylim(0, 0.3)
+
+# pce
+df$risk_deciles_pce = ntile(df$risk_order_pce, 10)
+df$true_label = as.numeric(as.character(df$true_label))
+decile_comp = df %>% group_by(risk_deciles_pce) %>% summarise_at(vars(risk, true_label), list(mean, sd)) %>% select(-true_label_fn2)
+names(decile_comp) = c('risk_deciles_pce', 'mean_risk', 'obs_risk', 'sd_risk')
+decile_comp$margin = qt(0.975, df = 311 - 1) * decile_comp$sd_risk / sqrt(311)
+decile_comp$upper = decile_comp$mean_risk + decile_comp$margin
+decile_comp$lower = decile_comp$mean_risk - decile_comp$margin
+
+ggplot(decile_comp, aes(x = mean_risk, y = obs_risk)) + geom_point() + geom_errorbar(xmin = decile_comp$lower, xmax = decile_comp$upper) + coord_fixed() + geom_abline(color = 'red') + xlab('Predicted Risk') + ylab('Observed Risk') + ggtitle('PCE - Risk Comparision') + theme_bw() + xlim(0, 0.3) + ylim(0, 0.3) 
+```
+
+Brier Score
+```{r}
+# PCE
+brier_score = df 
+brier_score$true_label = as.numeric(brier_score$true_label) 
+brier_score$bs_diff = brier_score$risk - brier_score$true_label
+sum(brier_score$bs_diff^2)/nrow(brier_score)
+
+# DDH
+brier_score = df 
+brier_score$true_label = as.numeric(brier_score$true_label) 
+brier_score$bs_diff = brier_score$value - brier_score$true_label
+sum(brier_score$bs_diff^2)/nrow(brier_score)
+
+# PCE (Borderline & Intermediate Risk)
+df_test = df %>% filter(risk_cat_pce %in% c('Borderline Risk', 'Intermediate Risk'))
+brier_score = df_test
+brier_score$true_label = as.numeric(brier_score$true_label) 
+brier_score$bs_diff = brier_score$risk - brier_score$true_label
+sum(brier_score$bs_diff^2)/nrow(brier_score)
+
+# DDH (Borderline & Intermediate Risk)
+brier_score = df_test
+brier_score$true_label = as.numeric(brier_score$true_label) 
+brier_score$bs_diff = brier_score$value - brier_score$true_label
+sum(brier_score$bs_diff^2)/nrow(brier_score)
+```
+
+```{r, fig.width = 8, fig.height= 6}
+ggplot(df, aes(x = log(risk), y = value, color = true_label)) + geom_point(alpha = .5, fill = 'white') + theme_bw() + scale_color_manual(values=c('lightgray', 'red')) + xlab('pce_risk(logged)') + ylab('ddh_risk') +
+  geom_vline(xintercept = log(0.05), color = 'green', linetype = 'dashed') + geom_vline(xintercept = log(0.075), color = 'gold', linetype = 'dashed') + geom_vline(xintercept = log(0.2), color = 'red', linetype = 'dashed')
+```
+
+```{r, fig.width=4, fig.height=4}
+# pce roc
+roc_score_pce = roc(df$true_label, df$risk)
+roc_score_ddh = roc(df$true_label, df$value)
+plot.roc(roc_score_pce, main ="PCE", colorize = T, print.auc = T,, col = 'chartreuse3')
+plot.roc(roc_score_ddh, main ="DDH", add = T, colorize = T, print.auc = T, col = 'coral2',  print.auc.y = 0.6 )
+````

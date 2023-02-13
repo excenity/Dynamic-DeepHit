@@ -1,0 +1,94 @@
+---
+title: "FeatureImportance"
+author: "Jingzhi Kevin Yu"
+date: "6/30/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+library(data.table)
+library(tidyverse)
+library(pROC)
+library(ggplot2)
+library(gridExtra)
+library(meta)
+
+
+root.dir = '/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/Output/Feature Importance AUC/'
+files_path = list.files(root.dir)
+```
+
+```{r message=FALSE, warning=FALSE}
+auc_list = c()
+ci_lower = c()
+ci_upper = c()
+var_list = c()
+
+for (i in 1:10)
+{
+  df = fread(paste0(root.dir, files_path[i]))
+  ci = ci.auc(df$true_labels, df$ddh_risk)
+  name = str_sub(files_path[i], 9, -1)
+  name = str_sub(name, 1, -5)
+  var_list = c(var_list, name)
+  auc_list = c(auc_list, ci[2])
+  ci_lower = c(ci_lower, ci[1])
+  ci_upper = c(ci_upper, ci[3])
+}
+
+auc_df = as.data.frame(var_list)
+auc_df$auc = auc_list
+auc_df$ci_lower = ci_lower
+auc_df$ci_upper = ci_upper
+
+auc_df$var_list = c('Age', 'Total Cholesterol', 'Smoking Status', 'DBP', 'Diabetes', 'Gender', 'HDL', 'HTN Treatment', 'Race', 'SBP')
+auc_df = as.data.frame(auc_df %>% arrange(auc))
+auc_df$var_list = factor(auc_df$var_list, levels = c(auc_df$var_list))
+```
+
+Forest Plot
+```{r, fig.height = 3, fig.width = 6}
+auc_df$index = 1:nrow(auc_df)
+
+ggplot(data = auc_df, aes(y = var_list, x = auc, xmin=ci_lower, xmax=ci_upper, label = CI)) +
+  geom_point() + 
+  geom_errorbarh(height=.1) +
+  theme_classic() +
+  xlab('AUROC') +
+  ylab('Predictor Withheld') + 
+  ggtitle ('AUROC After Individual Predictors Removed') +
+  geom_text(vjust = -1.25) +
+  geom_vline(xintercept = 0.815, color = 'red', linetype = 'longdash')
+
+plot1 = ggplot(data = auc_df, aes(y = var_list, x = auc, xmin=ci_lower, xmax=ci_upper)) +
+  geom_point() + 
+  geom_errorbarh(height=.1) +
+  theme_classic() +
+  xlab('AUROC') +
+  ylab('Predictor Withheld') + 
+  ggtitle ('AUROC After Individual Predictors Removed') +
+  geom_vline(xintercept = 0.815, color = 'red', linetype = 'longdash')
+
+plot2 = ggplot(data = auc_df, aes(y = var_list, x = 0.75, xmin=ci_lower, xmax=ci_upper, label = CI)) + geom_text() + theme_classic() + ggtitle('         AUC (CI)') + 
+  theme(axis.line = element_line(color = 'white'), 
+        axis.ticks = element_line(color = 'white'),
+        axis.text = element_text(color = 'white'), 
+        axis.title = element_text(color = 'white'))
+
+grid.arrange(plot1, plot2, ncol = 2)
+```
+
+
+AUC Table
+```{r}
+auc_df$Predictor = auc_df$var_list
+auc_df$AUC = as.character(round(auc_df$auc, 3))
+auc_df$CI_lower = as.character(round(auc_df$ci_lower, 3))
+auc_df$CI_upper = as.character(round(auc_df$ci_upper, 3))
+auc_df$AUC[str_count(auc_df$AUC) == 4] = paste0(auc_df$AUC[str_count(auc_df$AUC) == 4], '0')
+auc_df$CI_lower[str_count(auc_df$CI_lower) == 4] = paste0(auc_df$CI_lower[str_count(auc_df$CI_lower) == 4], '0')
+auc_df$CI_upper[str_count(auc_df$CI_upper) == 4] = paste0(auc_df$CI_upper[str_count(auc_df$CI_upper) == 4], '0')
+auc_df$CI = paste0(auc_df$AUC, ' [', auc_df$CI_lower, '-', auc_df$CI_upper, ']')
+```

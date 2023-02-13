@@ -1,0 +1,132 @@
+---
+title: "Risk Analysis"
+author: "Jingzhi Kevin Yu"
+date: "6/13/2022"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+if (!require(tidyverse)) install.packages('tidyverse')
+
+library(ggplot2)
+library(tidyverse)
+library("viridis") 
+library(nricens)
+library(caret)
+library(pROC)
+library(geepack)
+library(ggeffects)
+```
+
+```{R}
+df = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/risk_df_order.csv')
+
+# get data
+data = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/LRPP Data Prep/LRPP_select.csv')
+indecies_test = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/LRPP Data Prep/random_index_select.csv')
+names(indecies_test) = c('index', 'label', 'study_index')
+
+indecies_test = indecies_test %>% filter(study_index == 'TRUE') %>% distinct(index)
+data = data %>% filter(id %in% indecies_test$index) %>% filter(times <= 8)
+data_id = data %>% distinct(id) 
+data_id$id_new = 0:3112
+data = inner_join(data, data_id)
+data$id = data$id_new
+```
+
+Get difference between rankings 
+```{r}
+#df = df %>% filter(risk_cat_pce %in% c("Borderline Risk", "Intermediate Risk"))
+df$risk_diff = df$value - df$risk 
+hist(df$risk_diff, breaks = 50)
+```
+
+```{r}
+ggplot(df, aes(x = true_label, y = risk_diff, group = true_label)) + geom_boxplot() + theme_bw() + xlab('ASCVD Event') + ylab('Risk Difference')
+```
+
+
+```{r}
+df$risk_cat_pce = factor(df$risk_cat_pce, levels = c('Low Risk', 'Borderline Risk', 'Intermediate Risk', 'High Risk'))
+df %>% group_by(risk_cat_pce) %>% summarise_at(vars(risk_diff), list(mean, sd))
+```
+
+visualize long' data
+```{r}
+increase_list = df %>% filter(risk_diff >= 0) %>% distinct(id)
+data$change = 'Decrease'
+data$change[data$id %in% increase_list$id] = 'Increase'
+data$Risk = factor(data$change)
+#data = data %>% filter(id %in% df$id)
+```
+
+Model Trajectories using GEE
+```{r}
+# SBP
+traj_gee = geeglm(sbp ~ times + times*change, data = data, id = id, family = gaussian, corstr = 'exchangeable')
+summary(traj_gee)
+plot(ggemmeans(traj_gee, terms = c('times', 'change'))) + ggplot2::xlab('Exam Times') + ggplot2::ylab('SBP') #+ ggplot2::theme(legend.position = "none") + ggplot2::ggtitle('') 
+
+# DBP
+traj_gee = geeglm(dbp ~ times + times*change, data = data, id = id, family = gaussian, corstr = 'exchangeable')
+summary(traj_gee)
+plot(ggemmeans(traj_gee, terms = c('times', 'change'))) + ggplot2::xlab('Exam Times') + ggplot2::ylab('DBP') + ggplot2::theme(legend.position = "none") + ggplot2::ggtitle('') 
+
+# Total Cholesterol
+traj_gee = geeglm(chol ~ times + times*change, data = data, id = id, family = gaussian, corstr = 'exchangeable')
+summary(traj_gee)
+plot(ggemmeans(traj_gee, terms = c('times', 'change'))) + ggplot2::xlab('Exam Times') + ggplot2::ylab('Total Cholesterol') + ggplot2::theme(legend.position = "none") + ggplot2::ggtitle('') 
+
+# HDL
+traj_gee = geeglm(hdl ~ times + times*change, data = data, id = id, family = gaussian, corstr = 'exchangeable')
+summary(traj_gee)
+plot(ggemmeans(traj_gee, terms = c('times', 'change'))) + ggplot2::xlab('Exam Times') + ggplot2::ylab('HDL Cholesterol') + ggplot2::theme(legend.position = "none") + ggplot2::ggtitle('') 
+```
+
+
+Model Trajectories using GEE
+```{r}
+# SBP
+traj_gee = geeglm(sbp ~ times + times*label, data = data, id = id, family = gaussian, corstr = 'exchangeable')
+summary(traj_gee)
+plot(ggemmeans(traj_gee, terms = c('times', 'label'))) + ggplot2::xlab('Exam Times') + ggplot2::ylab('SBP') + ggplot2::ggtitle('SBP Trajectories') 
+
+# DBP
+traj_gee = geeglm(dbp ~ times + times*label, data = data, id = id, family = gaussian, corstr = 'exchangeable')
+summary(traj_gee)
+plot(ggemmeans(traj_gee, terms = c('times', 'label'))) + ggplot2::xlab('Exam Times') + ggplot2::ylab('SBP') + ggplot2::ggtitle('DBP Trajectories') 
+
+# Total Cholesterol
+traj_gee = geeglm(chol ~ times + times*label, data = data, id = id, family = gaussian, corstr = 'exchangeable')
+summary(traj_gee)
+plot(ggemmeans(traj_gee, terms = c('times', 'label'))) + ggplot2::xlab('Exam Times') + ggplot2::ylab('SBP') + ggplot2::ggtitle('Total Cholesterol Trajectories') 
+
+# HDL
+traj_gee = geeglm(hdl ~ times + times*label, data = data, id = id, family = gaussian, corstr = 'exchangeable')
+summary(traj_gee)
+plot(ggemmeans(traj_gee, terms = c('times', 'label'))) + ggplot2::xlab('Exam Times') + ggplot2::ylab('SBP') + ggplot2::ggtitle('HDL Trajectories') 
+```
+
+Hypertension Analysis
+```{r}
+htn_xover = df %>% filter(risk < 0.1 & value >= 0.1)#|risk >= 0.1 & value < 0.1 )
+data_htn = data %>% filter(id %in% htn_xover$id) %>% filter(sbp >= 130 & sbp < 140 | dbp >= 80 & dbp < 90) %>% filter(htnmed == 0)
+```
+
+Statins Analysis
+```{r}
+# people who are put on statins in PCE
+statin = df %>% filter(risk_cat_pce %in% c('Intermediate Risk', 'High Risk'))
+statin$on_statin_already = 'Not On Statins'
+statin$on_statin_already[statin$risk_cat_ddh %in% c('intermediate', 'high')] = 'Recommended Statins by DDH'
+print('Recommended Statins by PCE')
+table(statin$on_statin_already, statin$true_label)
+
+# people who are put on statins in PCE
+statin = df %>% filter(!risk_cat_pce %in% c('Intermediate Risk', 'High Risk'))
+statin$on_statin_already = 'Not On Statins'
+statin$on_statin_already[statin$risk_cat_ddh %in% c('intermediate', 'high')] = 'Recommended Statins by DDH'
+print('')
+print('Not recommended Statins by PCE')
+table(statin$on_statin_already, statin$true_label)
+```

@@ -13,6 +13,7 @@ library(tidyverse)
 library("viridis") 
 library(nricens)
 library(caret)
+library(pROC)
 
 df = read_csv('/Users/excenity/Documents/HSIP/Research/Longitudinal PCE/GitHub/Dynamic-DeepHit LRPP/AUC + Risk Calculations/risk_df_order.csv')
 
@@ -26,8 +27,18 @@ ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh, color = risk_cat_pce)) + 
 ```{r, fig.width = 8, fig.height= 6}
 df$true_label = as.factor(df$true_label)
 df %>% group_by(risk_cat_pce) %>% summarise_at(vars(risk_order_pce), min)
-ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh)) + geom_point(alpha = .5, color = 'gray') + geom_point(aes(x = risk_order_pce, y = risk_order_ddh)) theme_bw() + geom_abline(color = 'red', linewidth = 1.25) + scale_color_manual(values=c('gray', 'red')) +
-  geom_vline(xintercept = 1274, color = 'green', linetype = 'dashed') + geom_vline(xintercept = 1642, color = 'yellow', linetype = 'dashed') + geom_vline(xintercept = 2382, color = 'red', linetype = 'dashed')
+ggplot(df, aes(x = risk_order_pce, y = risk_order_ddh, color = true_label)) + geom_point(alpha = .5) + theme_bw() + geom_abline(color = 'red') + scale_discrete_manual(values=c('gray', 'red'), aesthetics = 'colour') + geom_vline(xintercept = 1274, color = 'green', linetype = 'dashed') + geom_vline(xintercept = 1642, color = 'yellow', linetype = 'dashed') + geom_vline(xintercept = 2382, color = 'red', linetype = 'dashed') + xlab('PCE Risk Rank') + ylab('DDH Risk Rank')
+```
+
+AUC CIs
+```{r}
+# PCE
+auc(df$true_label, df$risk)
+ci.auc(df$true_label, df$risk)
+
+# DDH
+auc(df$true_label, df$value)
+ci.auc(df$true_label, df$value)
 ```
 
 Continuous NRI 
@@ -52,6 +63,28 @@ unchanged_0 = df %>% filter(reclassification == 2 & true_label == 0) %>% count()
 
 ((up_1 - down_1)/(up_1 + down_1 + unchanged_1)) - ((up_0 - down_0)/(down_0 + up_0 + unchanged_0))
 ```
+
+Risk Visualization
+```{r, fig.height = 5, fig.width = 5}
+# ddh
+df$risk_deciles_ddh = ntile(df$risk_order_ddh, 10)
+df$true_label = as.numeric(as.character(df$true_label))
+decile_comp = df %>% group_by(risk_deciles_ddh) %>% summarise_at(vars(value, true_label), mean)
+decile_comp
+names(decile_comp) = c('risk_deciles_ddh', 'mean_risk', 'obs_risk')
+
+ggplot(decile_comp, aes(x = mean_risk, y = obs_risk)) + geom_point() + xlim(0, 0.25) + ylim(0, 0.25) +coord_fixed() + geom_abline(color = 'red') + xlab('Predicted Risk') + ylab('Observed Risk') + ggtitle('DDH - Risk Comparison') + theme_bw()
+
+# pce
+df$risk_deciles_pce = ntile(df$risk_order_pce, 10)
+df$true_label = as.numeric(as.character(df$true_label))
+decile_comp = df %>% group_by(risk_deciles_pce) %>% summarise_at(vars(risk, true_label), mean)
+head(decile_comp)
+names(decile_comp) = c('risk_deciles_pce', 'mean_risk', 'obs_risk')
+
+ggplot(decile_comp, aes(x = mean_risk, y = obs_risk)) + geom_point() + xlim(0, 0.25) + ylim(0, 0.25) +coord_fixed() + geom_abline(color = 'red') + xlab('Predicted Risk') + ylab('Observed Risk') + ggtitle('PCE - Risk Comparision') + theme_bw()
+```
+
 
 NRI
 ```{r, fig.width = 6, fig.height = 4}
