@@ -113,7 +113,7 @@ def f_construct_dataset(df, feat_list):
 
 def import_dataset(norm_mode = 'standard'):
 
-    df_                = pd.read_csv('/content/drive/My Drive/Longitudinal Risk Prediction/Dynamic-DeepHit LRPP/LRPP_select.csv')
+    df_                = pd.read_csv("R:/PrevMed/Projects/MESA_RiskPred/LRPP data/LRPP_select.csv")
 
 
     #remove variable
