@@ -183,10 +183,9 @@ def convert_df(input_df):
 
 def pce_prediction(input_df, pred_time):
     
-  global max_age_before_threshold
-
   # get max before threshold 
-  max_age_before_threshold = input_df.loc[input_df['times'] <= pred_time, :].groupby('id').times.max().reset_index()
+
+  max_age_before_threshold = input_df.loc[input_df['time'] <= pred_time, :].groupby('id').time.max().reset_index()
   
   input_df = pd.merge(input_df, max_age_before_threshold)
     
@@ -196,13 +195,11 @@ def pce_prediction(input_df, pred_time):
   return prediction_df
 
 def pce_pred_df_tab(input_df, pred_time, pred_time_index):
-  
-  global max_age_before_threshold
     
   # get max before threshold 
-  max_age_before_threshold = input_df.loc[input_df['times'] <= pred_time, :].groupby('id').times.max().reset_index()
+  #max_age_before_threshold = input_df.loc[input_df['time'] <= pred_time, :].groupby('id').time.max().reset_index()
   
-  input_df = pd.merge(input_df, max_age_before_threshold)
+  #input_df = pd.merge(input_df, max_age_before_threshold)
 
   input_df = pd.DataFrame(input_df)
   #input_df ['x', 'sbp', 'dbp', 'hdl', 'chol', 'age', 'cig', 'dm03', 'htnmed', 'race', 'gender']
