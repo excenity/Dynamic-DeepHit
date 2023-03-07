@@ -80,7 +80,7 @@ ci.auc(dh_training$true_labels, dh_training$pred_risk)
 Continuous NRI 
 Formula: [(up - down)/(up + down + unchanged) in Y = 1] + [(down - up)/(up + down + unchanged) in Y = 0]
 ```{r}
-df_nri = df  %>% filter(risk_cat_pce %in% c('Intermediate Risk', 'Borderline Risk'))
+df_nri = df  #%>% filter(risk_cat_pce %in% c('Intermediate Risk', 'Borderline Risk'))
 
 df_nri$value = round(df_nri$value, 4)
 
@@ -154,6 +154,12 @@ sum(brier_score$bs_diff^2)/nrow(brier_score)
 brier_score = df_test
 brier_score$true_label = as.numeric(brier_score$true_label) 
 brier_score$bs_diff = brier_score$value - brier_score$true_label
+sum(brier_score$bs_diff^2)/nrow(brier_score)
+
+# DDH (Borderline & Intermediate Risk)
+brier_score = dh 
+brier_score$true_label = as.numeric(brier_score$true_labels) 
+brier_score$bs_diff = brier_score$pred_risk - brier_score$true_label
 sum(brier_score$bs_diff^2)/nrow(brier_score)
 ```
 
